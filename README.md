@@ -1,379 +1,245 @@
 
-# Monitoring and Logging
+# AWS S3 bucket Terraform module
+
+Terraform is an infrastructure as code (IaC) tool that allows you to manage and provision your infrastructure across multiple cloud providers or on-premise environments. It uses a declarative language to describe the desired state of your infrastructure and automates the creation and modification of resources.
+
+Amazon S3 (Simple Storage Service) is a highly scalable and secure object storage service provided by Amazon Web Services (AWS). It is designed to store and retrieve any amount of data from anywhere on the web.
+
+S3 provides developers and businesses with a highly durable, available, and secure storage infrastructure at a low cost. It allows users to store and retrieve data of any size, including documents, images, videos, and application backups. S3 also provides features such as versioning, lifecycle policies, access control, and encryption to help users manage their data efficiently and securely.
+
+S3 is commonly used to store and serve static files for web applications, host data backups, and store media files for content delivery networks (CDNs). It can also be integrated with other AWS services such as Amazon CloudFront, Amazon EC2, and Amazon RDS to create powerful and scalable web applications.
+
+## Supported Features
+
+- static web-site hosting
+- access logging
+- versioning
+- CORS
+- lifecycle rules
+- server-side encryption
+- object locking
+- Cross-Region Replication (CRR)
+- ELB log delivery bucket policy
+- ALB/NLB log delivery bucket policy
+
+## Usage
 
-## Introduction
-Monitoring involves the process of continuously tracking and observing the performance and behavior of your application, infrastructure, and services. It is used to detect and diagnose issues, performance bottlenecks, and errors in real-time or near-real-time. Monitoring helps you maintain the uptime and availability of your applications and ensures that they are performing optimally. You can use monitoring tools to collect metrics, such as CPU usage, memory utilization, network throughput, and response time, and set alerts when these metrics exceed certain thresholds.
+### Private bucket with versioning enabled
 
-Logging involves the process of capturing and storing the events and actions that occur within your application and infrastructure. This includes error messages, warnings, status updates, and other relevant information. Logging helps you understand what happened when an issue occurred, diagnose the root cause of problems, and troubleshoot issues more effectively. You can use logging tools to collect and aggregate log data from different sources, such as servers, containers, and applications, and analyze this data to gain insights and improve your application's performance.
+```hcl
+module "s3_bucket" {
+  source = "terraform-aws-modules/s3-bucket/aws"
+
+  bucket = "my-s3-bucket"
+  acl    = "private"
 
-Both monitoring and logging are critical for maintaining the health and performance of your applications, and they work together to help you detect, diagnose, and resolve issues. By monitoring your application's performance and collecting logs, you can gain visibility into your application's behavior, troubleshoot issues, and optimize its performance.
+  versioning = {
+    enabled = true
+  }
+
+}
+```
+### Bucket with ELB access log delivery policy attached
 
-## RoadMap
+```hcl
+module "s3_bucket_for_logs" {
+  source = "terraform-aws-modules/s3-bucket/aws"
 
-- AWS Monitoring and Logging Service
-- Use Cases
-- ECS Monitoring and Logging
-- EKS Monitoring and Logging Using FluentBit
-- Best Practices for Monitoring and Logging
+  bucket = "my-s3-bucket-for-logs"
+  acl    = "log-delivery-write"
 
-## AWS Monitoring and Logging Services
+  # Allow deletion of non-empty bucket
+  force_destroy = true
 
-Amazon Web Services (AWS) provides several services for monitoring and logging, which are crucial for maintaining the health and performance of your applications running on AWS. Here are some of the AWS services that can help with monitoring and logging:
+  attach_elb_log_delivery_policy = true
+}
+```
 
-- Amazon CloudWatch: It is a monitoring service for AWS resources and the applications run on AWS. CloudWatch can collect and track metrics, collect and monitor log files, and set alarms. Use CloudWatch to gain system-wide visibility into resource utilization, application performance, and operational health.
-
-- AWS CloudTrail: It is a service that enables governance, compliance, operational auditing, and risk auditing of AWS account. With CloudTrail, one can log, continuously monitor, and retain account activity related to actions across your AWS infrastructure.
-
-- AWS X-Ray: It is a service that helps analyze and debug production, distributed applications, such as those built using a microservices architecture. X-Ray provides an end-to-end view of requests as they travel through application, and shows a map of  application's underlying components.
-
-- Amazon Elasticsearch Service: It is a managed service that makes it easy to deploy, operate, and scale Elasticsearch clusters in the AWS Cloud. Elasticsearch is a popular open-source search and analytics engine that you can use to store, search, and analyze your data.
-
-- Amazon Managed Service for Prometheus: It is a fully managed service that makes it easy to monitor containerized applications at scale. With Managed Service for Prometheus, one can collect and query metrics from containerized applications, AWS services, and on-premises resources.
-
-## Use Cases 
-
-- Application Performance Monitoring (APM): Suppose a web application running on AWS, and want to monitor its performance and identify any issues that may be affecting its response time or throughput. Use AWS CloudWatch to collect metrics such as CPU usage, network traffic, and database connections, and set alarms to alert  when these metrics exceed certain thresholds. Additionally, use AWS X-Ray to trace requests as they travel through your application and identify bottlenecks or errors.
-
-- Security Monitoring: Suppose, to monitor your AWS account for unauthorized access attempts, changes to security groups or access policies, or other security-related events.Use AWS CloudTrail to log all API calls made to your AWS account and analyze this data to detect potential security threats. Also use AWS GuardDuty to monitor your AWS resources for threats such as malware, phishing, and unauthorized access.
-
-- Container Monitoring: Suppose, running a containerized application on AWS and want to monitor its performance, resource utilization, and logs. Use Amazon Managed Service for Prometheus to collect and query metrics from your containers, AWS services, and on-premises resources. Also use Amazon Elasticsearch Service to store and analyze logs from your containers and infrastructure.
-
-- Infrastructure Monitoring: Suppose, to monitor the health and performance of AWS infrastructure, such as EC2 instances, RDS databases, and load balancers. Use AWS CloudWatch to collect metrics and logs from these resources and set alarms to notify you of any issues. Also use AWS Systems Manager to automate common maintenance and deployment tasks, such as patch management and configuration updates.
-
-- DevOps Monitoring: Suppose, a continuous integration and deployment (CI/CD) pipeline running on AWS, and you want to monitor the performance and health of your pipeline. Use AWS CodePipeline to automate your software release process and monitor its progress in real-time. Also use AWS CloudWatch to collect metrics, such as build times, test results, and deployment frequency, and set alarms to notify you of any issues.
-
-- Serverless Application Monitoring: Suppose, a serverless application running on AWS Lambda, and want to monitor its performance, errors, and logs. Use AWS X-Ray to trace requests as they flow through your application and identify any issues or bottlenecks. Also use AWS CloudWatch to collect and analyze Lambda function metrics, such as invocation rates, duration, and errors, and set alarms to notify you of any issues.
-
-## ECS Monitoring and Logging
-
-Amazon Elastic Container Service (ECS) is a highly scalable container management service that makes it easy to run, stop, and manage Docker containers on a cluster. Logging and monitoring are essential for maintaining the health and performance of your ECS clusters and the applications running on them.
-
-In this example, we'll explore how to configure logging and monitoring for an ECS cluster using the following services:
-
-- Amazon CloudWatch Logs: for collecting, monitoring, and storing container logs.
-- Amazon CloudWatch Metrics: for collecting, monitoring, and storing container metrics.
-- AWS CloudFormation: for automating the provisioning of resources.
-- AWS X-Ray: for distributed tracing and request analysis.
-
-Step-1: Create an ECS cluster
-
-To get started, create an ECS cluster with Fargate launch type using AWS CloudFormation. Here's an example CloudFormation template
-
-    Resources:
-    ECSCluster:
-        Type: AWS::ECS::Cluster
-        Properties:
-        ClusterName: my-ecs-cluster
-
-Step-2: Configure logging
-
-Next, configure your containers to send logs to Amazon CloudWatch Logs. You can do this by setting the log-driver option in your task definition to awslogs and providing the log group and log stream names. Here's an example task definition
-
-    {
-    "family": "my-task",
-    "containerDefinitions": [
-        {
-        "name": "my-container",
-        "image": "my-image",
-        "logConfiguration": {
-            "logDriver": "awslogs",
-            "options": {
-            "awslogs-group": "/ecs/my-task",
-            "awslogs-region": "us-east-1",
-            "awslogs-stream-prefix": "my-container"
-            }
-        }
-        }
-    ]
-    }
-
-This configuration sends logs from the my-container container to the /ecs/my-task log group in the us-east-1 region with a log stream prefix of my-container.
-
-Step-3: Configure X-Ray tracing
-
-To enable X-Ray tracing, you need to modify the task definition for your container to include the X-Ray daemon as a sidecar container. Here's an example task definition
-
-    {
-    "family": "my-task",
-    "containerDefinitions": [
-        {
-        "name": "my-container",
-        "image": "my-image",
-        "logConfiguration": {
-            "logDriver": "awslogs",
-            "options": {
-            "awslogs-group": "/ecs/my-task",
-            "awslogs-region": "us-east-1",
-            "awslogs-stream-prefix": "my-container"
-            }
-        }
-        },
-        {
-        "name": "xray-daemon",
-        "image": "amazon/aws-xray-daemon",
-        "essential": true,
-        "portMappings": [
-            {
-            "containerPort": 2000,
-            "hostPort": 2000,
-            "protocol": "udp"
-            }
-        ],
-        "environment": [
-            {
-            "name": "AWS_REGION",
-            "value": "us-east-1"
-            }
-        ]
-        }
-    ]
-    }
-
-This configuration includes an X-Ray daemon container that runs alongside the my-container container. The daemon listens for UDP traffic on port 2000 and sends trace data to the X-Ray service.
-
-Step-4: Create CloudWatch Metrics alarms
-
-You can create CloudWatch Metrics alarms to monitor your ECS cluster and containers. Alarms can be set up to notify you via email or SMS when a metric exceeds a threshold. Here's an example CloudFormation template for creating a CPU usage alarm
-
-    Resources:
-    CPUAlarm:
-        Type: AWS::CloudWatch::Alarm
-        Properties:
-        AlarmName: ecs-cpu-alarm
-        AlarmDescription: CPU utilization of ECS service
-        MetricName: CPUUtilization
-        Namespace: AWS/ECS
-        Statistic: Average
-        Period: '60'
-        EvaluationPeriods: '5'
-        Threshold: '80'
-        ComparisonOperator: GreaterThanThreshold
-        Dimensions:
-            - Name: ServiceName
-            Value: my-service
-
-This configuration creates an alarm that monitors the CPUUtilization metric for the my-service service in the AWS/ECS namespace. If the metric exceeds 80% for five consecutive periods of 60 seconds, the alarm triggers.
-
-Step-5: View logs and metrics
-
-Once you've configured logging and monitoring, you can view logs and metrics in the Amazon CloudWatch console. Logs are stored in log groups, and you can search and filter logs using the console or the CloudWatch Logs Insights feature. Metrics are displayed in graphs and can be customized to display specific metrics and time periods.
-
-## EKS Monitoring and Logging Using FluentBit
-
-Here's a brief overview of the tools and concepts we'll be working with:
-
-- Amazon EKS is a managed Kubernetes service that makes it easy to run Kubernetes clusters on AWS.
-- Fluent Bit is an open-source and lightweight log processor and forwarder that is capable of collecting, parsing, and forwarding log data.
-- Amazon CloudWatch is a monitoring service for AWS resources and applications. It provides monitoring and logging capabilities, which can be used to collect, analyze, and act on metrics and log data from EKS clusters.
-
-To configure EKS logging and monitoring using Fluent Bit, follow the steps below:
-
-Step-1: Create a new Amazon EKS cluster or use an existing one
-
-Step-2: Deploy Fluent Bit as a DaemonSet in the cluster. A DaemonSet ensures that a copy of a pod is running on each node in the cluster. Here's an example YAML file for deploying Fluent Bit
-
-    apiVersion: apps/v1
-    kind: DaemonSet
-    metadata:
-    name: fluent-bit
-    namespace: logging
-    spec:
-    selector:
-        matchLabels:
-        app: fluent-bit
-    template:
-        metadata:
-        labels:
-            app: fluent-bit
-        spec:
-        containers:
-        - name: fluent-bit
-            image: fluent/fluent-bit:latest
-            env:
-            - name: "FLUENT_UID"
-            value: "0"
-            - name: "FLUENTD_CONF"
-            value: "fluent-bit.conf"
-            volumeMounts:
-            - name: fluent-bit-config
-            mountPath: /fluent-bit/etc/
-        volumes:
-        - name: fluent-bit-config
-            configMap:
-            name: fluent-bit-config
-
-Step-3: Create a ConfigMap that contains the Fluent Bit configuration file.
-
-    apiVersion: v1
-    kind: ConfigMap
-    metadata:
-    name: fluent-bit-config
-    namespace: logging
-    data:
-    fluent-bit.conf: |
-        [SERVICE]
-            Flush        1
-            Log_Level    info
-            Parsers_File parsers.conf
-
-        [INPUT]
-            Name              tail
-            Path              /var/log/containers/*.log
-            Tag               kube.*
-            Parser            docker
-            DB                /var/log/flb_kube.db
-            Mem_Buf_Limit     50MB
-            Skip_Long_Lines   On
-            Refresh_Interval  10
-
-        [FILTER]
-            Name                kubernetes
-            Match               kube.*
-            Kube_URL            https://kubernetes.default.svc:443
-            Kube_CA_File        /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-            Kube_Token_File     /var/run/secrets/kubernetes.io/serviceaccount/token
-            Merge_Log           On
-            Merge_Log_Key       log_processed
-
-        [OUTPUT]
-            Name cloudwatch_logs
-            Match *
-            region <aws-region>
-            log_group_name <log-group-name>
-            log_stream_prefix <log-stream-prefix>
-            auto_create_group true
-            max_retry 5
-            retry_limit 5
-            retry_wait 
-
-Step-4: Create the ConfigMap using the following command
-
-    $ kubectl create configmap fluent-bit-config --from-file fluent-bit.conf
-
-Step-5: Create a ClusterRole that allows Fluent Bit to read Kubernetes resources, such as pods and namespaces
-
-    apiVersion: rbac.authorization.k8s.io/v1beta1
-    kind: ClusterRole
-    metadata:
-    name: fluent-bit-read
-    rules:
-    - apiGroups: [""]
-    resources:
-    - namespaces
-    - pods
-    verbs:
-    - get
-    - list
-    - watch
-
-Step-6: Bind the ClusterRole to the ServiceAccount
-
-    apiVersion: rbac.authorization.k8s.io/v1beta1
-    kind: ClusterRoleBinding
-    metadata:
-    name: fluent-bit-read
-    roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: ClusterRole
-    name: fluent-bit-read
-    subjects:
-    - kind: ServiceAccount
-    name: fluent-bit
-    namespace: logging
-
-Step-7: Deploy the ClusterRoleBinding
-
-    $ kubectl apply -f fluent-bit-role.yaml
-
-Step-8: Deploy Fluent Bit
-
-    $ kubectl apply -f fluent-bit.yaml
-
-Step-9: Verify that Fluent Bit is running
-
-    $ kubectl get pods -n logging
-
-Step-10: Create a log group in Amazon CloudWatch Logs
-
-    $ aws logs create-log-group --log-group-name <log-group-name> --region <aws-region>
-
-Step-11: Verify that logs are being sent to Amazon CloudWatch Logs
-
-    $ aws logs describe-log-streams --log-group-name <log-group-name> --region <aws-region>
-
-## Best Practices for Monitoring and Logging
-
-- Define clear metrics: Before you begin using CloudWatch, define the metrics that you want to monitor. Be clear on the specific values that you need to track, such as CPU utilization, network traffic, or error rates. This will help you create better alarms and dashboards.
-
-- Use namespaces and dimensions: Use namespaces and dimensions to organize and filter your metrics. Namespaces can help you distinguish between different applications or environments, while dimensions can provide additional context to your metrics.
-
-- Choose appropriate data resolution: Choose the appropriate data resolution based on the frequency and granularity of your metrics. For example, if you need to monitor CPU utilization every minute, use a higher resolution than if you only need to monitor it every 5 minutes.
-
-- Enable detailed monitoring: Enable detailed monitoring for instances and other resources that require high-resolution metrics. This will provide more granular data for your metrics.
-
-- Use alarms to monitor metrics: Create alarms to monitor your metrics and notify you when a specific threshold is breached. This will help you take timely action to prevent issues or outages.
-
-- Create custom metrics: Use CloudWatch APIs or CloudWatch Agent to create custom metrics for your applications.
-
-- Define clear monitoring goals: Before you start using CloudWatch, it's important to define what you want to monitor and what metrics you want to track. This will help you avoid collecting unnecessary data and ensure that you're collecting the right data to help you troubleshoot issues.
-
-- Set up proper permissions: Make sure you configure appropriate IAM roles and policies for users and services to access and interact with CloudWatch resources. This will help ensure security and prevent unauthorized access.
-
-- Enable CloudWatch Logs for your EC2 instances: By enabling CloudWatch Logs for your EC2 instances, you can capture and store logs generated by your applications and operating system. This data can be used to troubleshoot issues and monitor performance
-
-- Use CloudWatch Dashboards: Create dashboards to visualize and analyze your metrics in real-time. This can help you quickly identify issues and make informed decisions.
-
-- Use CloudWatch Events to automate tasks: You can use CloudWatch Events to trigger automated responses to specific events. This can help you save time and improve efficiency
-
-- Enable CloudWatch Agent on your instances: By installing and configuring the CloudWatch Agent on your instances, you can collect more detailed system-level metrics and logs.
-
-- Set up cross-account CloudWatch monitoring: If you have multiple AWS accounts, you can set up cross-account CloudWatch monitoring to gain visibility into all your resources.
-
-- Instrument all your application components: It is important to instrument all the components of your application, including front-end, back-end, and third-party services, to get a comprehensive view of your application's performance.
-
-- Use tracing headers: Tracing headers such as X-Amzn-Trace-Id can be used to propagate trace information between services, enabling you to track the end-to-end flow of a request.
-
-- Use annotations and metadata: Annotations and metadata can be used to add contextual information to traces, making it easier to understand and troubleshoot issues.
-
-- Set sampling rules: Sampling rules can be used to control the amount of data that is collected, reducing the cost of tracing while still providing sufficient coverage.
-
-- Analyze traces regularly: Regularly analyzing traces can help you identify performance bottlenecks and potential issues before they impact your users.
-
-- Integrate with AWS services: AWS X-Ray can be integrated with other AWS services such as Amazon EC2, Amazon ECS, and AWS Lambda to provide deeper insights into the performance of your applications.
-
-- Use X-Ray SDKs: X-Ray SDKs are available for popular programming languages such as Java, Python, and Node.js, making it easier to instrument your application components.
-
-- Monitor error rates: Monitoring error rates can help you identify issues and improve the quality of your application.
-
-- Use X-Ray with CloudWatch: Using X-Ray with CloudWatch can help you monitor the performance of your applications in real-time and set alarms to notify you of issues.
-
-- Keep X-Ray updated: Keep your X-Ray libraries and agents updated to ensure that you are using the latest features and bug fixes.
-
-- Define clear log collection requirements: Before configuring Fluent Bit, define what logs you want to collect, where they are located, and how often they should be collected. This will help you to optimize your Fluent Bit configuration and ensure that it is collecting the data you need.
-
-- Configure log collection paths: Fluent Bit can collect logs from various sources, such as local files, standard input, or syslog. Specify the appropriate paths to collect logs from the sources you need.
-
-- Set up log parsing: Fluent Bit can parse various log formats, including JSON, syslog, and Apache. Configure the appropriate parser to ensure that your logs are parsed correctly.
-
-- Filter logs: Fluent Bit filters can be used to modify and enrich logs based on specific criteria. Use filters to remove unnecessary data or add additional metadata to your logs.
-
-- Optimize performance: Fluent Bit performance can be optimized by configuring the number of workers and the buffer size. Experiment with these settings to find the optimal configuration for your needs.
-
-- Set up log forwarding: Fluent Bit can forward logs to various destinations, such as Elasticsearch, AWS S3, or Kafka. Configure the appropriate destination and authentication settings to ensure that your logs are securely sent to the right location.
-
-- Monitor Fluent Bit: Set up monitoring for Fluent Bit to ensure that it is running smoothly and collecting the expected logs. Fluent Bit provides several metrics that can be used to monitor its performance, including CPU usage, memory usage, and the number of processed records.
-
-- Keep Fluent Bit up to date: Fluent Bit is an active project, and updates are regularly released to improve performance and fix bugs. Ensure that you are using the latest version to take advantage of the latest features and bug fixes.
-
-
-
-
-
-
-
-
-
-
+### Bucket with ALB/NLB access log delivery policy attached
+
+```hcl
+module "s3_bucket_for_logs" {
+  source = "terraform-aws-modules/s3-bucket/aws"
+
+  bucket = "my-s3-bucket-for-logs"
+  acl    = "log-delivery-write"
+
+  # Allow deletion of non-empty bucket
+  force_destroy = true
+
+  attach_elb_log_delivery_policy = true  # Required for ALB logs
+  attach_lb_log_delivery_policy  = true  # Required for ALB/NLB logs
+}
+```
+
+### Static Web hosting
+
+```hcl
+
+module "s3_web_hosting" {
+  website = {
+    # conflicts with "error_document"
+    #        redirect_all_requests_to = {
+    #          host_name = "https://modules.tf"
+    #        }
+
+    index_document = "index.html"
+    error_document = "error.html"
+    routing_rules = [{
+      condition = {
+        key_prefix_equals = "docs/"
+      },
+      redirect = {
+        replace_key_prefix_with = "documents/"
+      }
+      }, {
+      condition = {
+        http_error_code_returned_equals = 404
+        key_prefix_equals               = "archive/"
+      },
+      redirect = {
+        host_name          = "archive.myhost.com"
+        http_redirect_code = 301
+        protocol           = "https"
+        replace_key_with   = "not_found.html"
+      }
+    }]
+  }
+}
+
+```
+
+## Conditional creation
+
+Sometimes you need to have a way to create S3 resources conditionally but Terraform does not allow to use `count` inside `module` block, so the solution is to specify argument `create_bucket`.
+
+```hcl
+# This S3 bucket will not be created
+module "s3_bucket" {
+  source = "terraform-aws-modules/s3-bucket/aws"
+
+  create_bucket = false
+  # ... omitted
+}
+```
+
+## Examples:
+
+- Complete - Complete S3 bucket with most of supported features enabled
+- Cross-Region Replication - S3 bucket with Cross-Region Replication (CRR) enabled
+- S3 Bucket Notifications - S3 bucket notifications to Lambda functions, SQS queues, and SNS topics.
+- S3 Bucket Object - Manage S3 bucket objects.
+
+## Requirements
+
+| Name | Version |
+|------|---------|
+|  [terraform](#requirement\_terraform) | >= 0.13.1 |
+|  [aws](#requirement\_aws) | >= 4.9 |
+
+## Providers
+
+| Name | Version |
+|------|---------|
+|  [aws](#provider\_aws) | >= 4.9 |
+
+
+## Resources
+
+| Name | Type |
+|------|------|
+| [aws_s3_bucket.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket) | resource |
+| [aws_s3_bucket_accelerate_configuration.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_accelerate_configuration) | resource |
+| [aws_s3_bucket_acl.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_acl) | resource |
+| [aws_s3_bucket_analytics_configuration.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_analytics_configuration) | resource |
+| [aws_s3_bucket_cors_configuration.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_cors_configuration) | resource |
+| [aws_s3_bucket_intelligent_tiering_configuration.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_intelligent_tiering_configuration) | resource |
+| [aws_s3_bucket_inventory.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_inventory) | resource |
+| [aws_s3_bucket_lifecycle_configuration.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_lifecycle_configuration) | resource |
+| [aws_s3_bucket_logging.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_logging) | resource |
+| [aws_s3_bucket_metric.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_metric) | resource |
+| [aws_s3_bucket_object_lock_configuration.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_object_lock_configuration) | resource |
+| [aws_s3_bucket_ownership_controls.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_ownership_controls) | resource |
+| [aws_s3_bucket_policy.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_policy) | resource |
+| [aws_s3_bucket_public_access_block.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_public_access_block) | resource |
+| [aws_s3_bucket_replication_configuration.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_replication_configuration) | resource |
+| [aws_s3_bucket_request_payment_configuration.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_request_payment_configuration) | resource |
+| [aws_s3_bucket_server_side_encryption_configuration.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_server_side_encryption_configuration) | resource |
+| [aws_s3_bucket_versioning.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_versioning) | resource |
+| [aws_s3_bucket_website_configuration.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_website_configuration) | resource |
+| [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
+| [aws_canonical_user_id.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/canonical_user_id) | data source |
+| [aws_iam_policy_document.combined](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [aws_iam_policy_document.deny_insecure_transport](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [aws_iam_policy_document.elb_log_delivery](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [aws_iam_policy_document.inventory_and_analytics_destination_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [aws_iam_policy_document.lb_log_delivery](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [aws_iam_policy_document.require_latest_tls](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [aws_partition.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/partition) | data source |
+| [aws_region.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/region) | data source |
+
+## Inputs
+
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+|  [acceleration\_status](#input\_acceleration\_status) | (Optional) Sets the accelerate configuration of an existing bucket. Can be Enabled or Suspended. | `string` | `null` | no |
+|  [acl](#input\_acl) | (Optional) The canned ACL to apply. Conflicts with `grant` | `string` | `null` | no |
+|  [analytics\_configuration](#input\_analytics\_configuration) | Map containing bucket analytics configuration. | `any` | `{}` | no |
+|  [analytics\_self\_source\_destination](#input\_analytics\_self\_source\_destination) | Whether or not the analytics source bucket is also the destination bucket. | `bool` | `false` | no |
+|  [analytics\_source\_account\_id](#input\_analytics\_source\_account\_id) | The analytics source account id. | `string` | `null` | no |
+|  [analytics\_source\_bucket\_arn](#input\_analytics\_source\_bucket\_arn) | The analytics source bucket ARN. | `string` | `null` | no |
+|  [attach\_analytics\_destination\_policy](#input\_attach\_analytics\_destination\_policy) | Controls if S3 bucket should have bucket analytics destination policy attached. | `bool` | `false` | no |
+| [attach\_deny\_insecure\_transport\_policy](#input\_attach\_deny\_insecure\_transport\_policy) | Controls if S3 bucket should have deny non-SSL transport policy attached | `bool` | `false` | no |
+|  [attach\_elb\_log\_delivery\_policy](#input\_attach\_elb\_log\_delivery\_policy) | Controls if S3 bucket should have ELB log delivery policy attached | `bool` | `false` | no |
+|  [attach\_inventory\_destination\_policy](#input\_attach\_inventory\_destination\_policy) | Controls if S3 bucket should have bucket inventory destination policy attached. | `bool` | `false` | no |
+| [attach\_lb\_log\_delivery\_policy](#input\_attach\_lb\_log\_delivery\_policy) | Controls if S3 bucket should have ALB/NLB log delivery policy attached | `bool` | `false` | no |
+|  [attach\_policy](#input\_attach\_policy) | Controls if S3 bucket should have bucket policy attached (set to `true` to use value of `policy` as bucket policy) | `bool` | `false` | no |
+|  [attach\_public\_policy](#input\_attach\_public\_policy) | Controls if a user defined public bucket policy will be attached (set to `false` to allow upstream to apply defaults to the bucket) | `bool` | `true` | no |
+|  [attach\_require\_latest\_tls\_policy](#input\_attach\_require\_latest\_tls\_policy) | Controls if S3 bucket should require the latest version of TLS | `bool` | `false` | no |
+|  [block\_public\_acls](#input\_block\_public\_acls) | Whether Amazon S3 should block public ACLs for this bucket. | `bool` | `false` | no |
+|  [block\_public\_policy](#input\_block\_public\_policy) | Whether Amazon S3 should block public bucket policies for this bucket. | `bool` | `false` | no |
+|  [bucket](#input\_bucket) | (Optional, Forces new resource) The name of the bucket. If omitted, Terraform will assign a random, unique name. | `string` | `null` | no |
+|  [bucket\_prefix](#input\_bucket\_prefix) | (Optional, Forces new resource) Creates a unique bucket name beginning with the specified prefix. Conflicts with bucket. | `string` | `null` | no |
+|  [control\_object\_ownership](#input\_control\_object\_ownership) | Whether to manage S3 Bucket Ownership Controls on this bucket. | `bool` | `false` | no |
+|  [cors\_rule](#input\_cors\_rule) | List of maps containing rules for Cross-Origin Resource Sharing. | `any` | `[]` | no |
+|  [create\_bucket](#input\_create\_bucket) | Controls if S3 bucket should be created | `bool` | `true` | no |
+|  [expected\_bucket\_owner](#input\_expected\_bucket\_owner) | The account ID of the expected bucket owner | `string` | `null` | no |
+|  [force\_destroy](#input\_force\_destroy) | (Optional, Default:false ) A boolean that indicates all objects should be deleted from the bucket so that the bucket can be destroyed without error. These objects are not recoverable. | `bool` | `false` | no |
+|  [grant](#input\_grant) | An ACL policy grant. Conflicts with `acl` | `any` | `[]` | no |
+|  [ignore\_public\_acls](#input\_ignore\_public\_acls) | Whether Amazon S3 should ignore public ACLs for this bucket. | `bool` | `false` | no |
+|  [intelligent\_tiering](#input\_intelligent\_tiering) | Map containing intelligent tiering configuration. | `any` | `{}` | no |
+|  [inventory\_configuration](#input\_inventory\_configuration) | Map containing S3 inventory configuration. | `any` | `{}` | no |
+|  [inventory\_self\_source\_destination](#input\_inventory\_self\_source\_destination) | Whether or not the inventory source bucket is also the destination bucket. | `bool` | `false` | no |
+|  [inventory\_source\_account\_id](#input\_inventory\_source\_account\_id) | The inventory source account id. | `string` | `null` | no |
+|  [inventory\_source\_bucket\_arn](#input\_inventory\_source\_bucket\_arn) | The inventory source bucket ARN. | `string` | `null` | no |
+|  [lifecycle\_rule](#input\_lifecycle\_rule) | List of maps containing configuration of object lifecycle management. | `any` | `[]` | no |
+|  [logging](#input\_logging) | Map containing access bucket logging configuration. | `map(string)` | `{}` | no |
+|  [metric\_configuration](#input\_metric\_configuration) | Map containing bucket metric configuration. | `any` | `[]` | no |
+|  [object\_lock\_configuration](#input\_object\_lock\_configuration) | Map containing S3 object locking configuration. | `any` | `{}` | no |
+|  [object\_lock\_enabled](#input\_object\_lock\_enabled) | Whether S3 bucket should have an Object Lock configuration enabled. | `bool` | `false` | no |
+|  [object\_ownership](#input\_object\_ownership) | Object ownership. Valid values: BucketOwnerEnforced, BucketOwnerPreferred or ObjectWriter. 'BucketOwnerEnforced': ACLs are disabled, and the bucket owner automatically owns and has full control over every object in the bucket. 'BucketOwnerPreferred': Objects uploaded to the bucket change ownership to the bucket owner if the objects are uploaded with the bucket-owner-full-control canned ACL. 'ObjectWriter': The uploading account will own the object if the object is uploaded with the bucket-owner-full-control canned ACL. | `string` | `"ObjectWriter"` | no |
+|  [owner](#input\_owner) | Bucket owner's display name and ID. Conflicts with `acl` | `map(string)` | `{}` | no |
+|  [policy](#input\_policy) | (Optional) A valid bucket policy JSON document. Note that if the policy document is not specific enough (but still valid), Terraform may view the policy as constantly changing in a terraform plan. In this case, please make sure you use the verbose/specific version of the policy. For more information about building AWS IAM policy documents with Terraform, see the AWS IAM Policy Document Guide. | `string` | `null` | no |
+|  [replication\_configuration](#input\_replication\_configuration) | Map containing cross-region replication configuration. | `any` | `{}` | no |
+|  [request\_payer](#input\_request\_payer) | (Optional) Specifies who should bear the cost of Amazon S3 data transfer. Can be either BucketOwner or Requester. By default, the owner of the S3 bucket would incur the costs of any data transfer. See Requester Pays Buckets developer guide for more information. | `string` | `null` | no |
+|  [restrict\_public\_buckets](#input\_restrict\_public\_buckets) | Whether Amazon S3 should restrict public bucket policies for this bucket. | `bool` | `false` | no |
+|  [server\_side\_encryption\_configuration](#input\_server\_side\_encryption\_configuration) | Map containing server-side encryption configuration. | `any` | `{}` | no |
+|  [tags](#input\_tags) | (Optional) A mapping of tags to assign to the bucket. | `map(string)` | `{}` | no |
+|  [versioning](#input\_versioning) | Map containing versioning configuration. | `map(string)` | `{}` | no |
+|  [website](#input\_website) | Map containing static web-site hosting or redirect configuration. | `any` | `{}` | no |
+
+## Outputs
+
+| Name | Description |
+|------|-------------|
+| [s3\_bucket\_arn](#output\_s3\_bucket\_arn) | The ARN of the bucket. Will be of format arn:aws:s3:::bucketname. |
+|  [s3\_bucket\_bucket\_domain\_name](#output\_s3\_bucket\_bucket\_domain\_name) | The bucket domain name. Will be of format bucketname.s3.amazonaws.com. |
+|  [s3\_bucket\_bucket\_regional\_domain\_name](#output\_s3\_bucket\_bucket\_regional\_domain\_name) | The bucket region-specific domain name. The bucket domain name including the region name, please refer here for format. Note: The AWS CloudFront allows specifying S3 region-specific endpoint when creating S3 origin, it will prevent redirect issues from CloudFront to S3 Origin URL. |
+|  [s3\_bucket\_hosted\_zone\_id](#output\_s3\_bucket\_hosted\_zone\_id) | The Route 53 Hosted Zone ID for this bucket's region. |
+|  [s3\_bucket\_id](#output\_s3\_bucket\_id) | The name of the bucket. |
+| [s3\_bucket\_region](#output\_s3\_bucket\_region) | The AWS region this bucket resides in. |
+|  [s3\_bucket\_website\_domain](#output\_s3\_bucket\_website\_domain) | The domain of the website endpoint, if the bucket is configured with a website. If not, this will be an empty string. This is used to create Route 53 alias records. |
+|  [s3\_bucket\_website\_endpoint](#output\_s3\_bucket\_website\_endpoint) | The website endpoint, if the bucket is configured with a website. If not, this will be an empty string. |
 
 
 
