@@ -1,175 +1,303 @@
-# AWS CloudFront Terraform module
+# Shared Capabilities - Terraform Developer's Guide
 
-Terraform is an open-source tool for building, changing, and versioning infrastructure. It allows you to define your infrastructure as code, which means you can use a simple, declarative language to describe the resources you want to create, modify, or destroy in your cloud environment. Terraform supports a wide range of cloud providers, including Amazon Web Services (AWS), Microsoft Azure, Google Cloud Platform (GCP), and many more.
+In software development, "shared capabilities" refers to the functionalities or resources that are used by multiple software applications or components. These capabilities are typically designed to be reusable and shared across different parts of the software system.
 
-Amazon CloudFront is a content delivery network (CDN) service provided by Amazon Web Services (AWS). CloudFront is designed to deliver content, such as static and dynamic web pages, video streams, and APIs, to users around the world with low latency and high transfer speeds.
+For example, a software library that provides encryption or data compression functionality can be considered a shared capability that can be used by different applications. Similarly, a database management system that is used by multiple applications is also a shared capability.
 
-CloudFront works by caching content at edge locations, which are geographically distributed data centers around the world. When a user requests content, CloudFront routes the request to the nearest edge location, which then serves the content to the user. This helps to reduce the latency and improve the transfer speed of the content delivery.
+In Terraform, "shared capabilities" refer to reusable modules or components that can be used across different infrastructure projects. Terraform is an open-source infrastructure as code tool that allows developers to define and manage infrastructure resources such as virtual machines, databases, and networks.
 
-Terraform module which creates AWS CloudFront resources and can be integrated with API Gateway REST API.
+Shared capabilities in Terraform can take various forms, including modules, providers, and backends. These capabilities are designed to simplify the process of creating and managing infrastructure by providing reusable building blocks that can be shared across different projects and teams.
 
-## Supported Features
+For example, a Terraform module can be used to define a common set of resources, such as a virtual network, load balancer, and set of virtual machines, that can be used across different projects. Similarly, a Terraform provider can be used to integrate with a cloud provider or service, such as AWS or Azure, and provide a consistent set of resources and functionality across different projects.
 
-- Conditional creation for many types of resources
-- access logging
-- origins and origin groups
-- caching behaviours
-- Origin Access Identities (with S3 bucket policy)
-- Lambda@Edge
-- ACM certificate
-- Route53 record
-- API Gateway@Edge
+Using shared capabilities in Terraform offers several benefits, including:
 
-## Usage
+- Reusability: Shared capabilities enable developers to reuse infrastructure code across different projects, saving time and effort in development.
 
-### CloudFront distribution with versioning enabled
+- Consistency: Shared capabilities provide a consistent set of resources and functionality across different projects, which can simplify maintenance and improve the user experience.
 
-```hcl
-module "cdn" {
-  source = "terraform-aws-modules/cloudfront/aws"
+- Scalability: Shared capabilities can be designed to scale horizontally and vertically, enabling them to handle increased usage or larger datasets.
 
-  aliases = ["cdn.example.com"]
+- Collaboration: Shared capabilities can be shared across different teams and organizations, enabling better collaboration and knowledge sharing.
 
-  comment             = "My awesome CloudFront"
-  enabled             = true
-  is_ipv6_enabled     = true
-  price_class         = "PriceClass_All"
-  retain_on_delete    = false
-  wait_for_deployment = false
+Table of Contents
+=================
 
-  create_origin_access_identity = true
-  origin_access_identities = {
-    s3_bucket_one = "My awesome CloudFront can access"
-  }
+* [What is Terraform?](#What-is-Terraform)
+* [Why Terraform?](#Why-Terraform)
+* [How Does Terraform Work?](#How-Does-Terraform-Work)
+* [Objectives of this Capability](#Objectives-of-this-Capability)
+* [Features of this Capability](#Features-of-this-capability)
+* [Getting Started](#Getting-Started)
+  * [AWS Provider](#AWS-Provider)
+    * [AWS RDS Module](#AWS-RDS-Module)
+    * [AWS CloudFront Module](#AWS-CloudFront-Module)
+    * [AWS API Gateway Module](#AWS-API-Gateway-Module)
+    * [AWS S3 Module](#AWS-S3-Module)
+  * [GCP Provider](#GCP-Provider)
+  * [Azure Provider](#Azure-Provider)
+* [Terraform Best Practices](#Terraform-Best-Practices)
 
-  logging_config = {
-    bucket = "logs-my-cdn.s3.amazonaws.com"
-  }
+## What is Terraform
 
-  origin = {
-    something = {
-      domain_name = "something.example.com"
-      custom_origin_config = {
-        http_port              = 80
-        https_port             = 443
-        origin_protocol_policy = "match-viewer"
-        origin_ssl_protocols   = ["TLSv1", "TLSv1.1", "TLSv1.2"]
-      }
+HashiCorp Terraform is an infrastructure as code tool that lets you define both cloud and on-prem resources in human-readable configuration files that you can version, reuse, and share. You can then use a consistent workflow to provision and manage all of your infrastructure throughout its lifecycle. Terraform can manage low-level components like compute, storage, and networking resources, as well as high-level components like DNS entries and SaaS features.
+
+## Why Terraform
+
+#### Manage any infrastructure
+Find providers for many of the platforms and services you already use in the Terraform Registry. You can also write your own. Terraform takes an immutable approach to infrastructure, reducing the complexity of upgrading or modifying your services and infrastructure.
+
+#### Track your infrastructure
+Terraform generates a plan and prompts you for your approval before modifying your infrastructure. It also keeps track of your real infrastructure in a state file, which acts as a source of truth for your environment. Terraform uses the state file to determine the changes to make to your infrastructure so that it will match your configuration.
+
+#### Automate changes
+Terraform configuration files are declarative, meaning that they describe the end state of your infrastructure. You do not need to write step-by-step instructions to create resources because Terraform handles the underlying logic. Terraform builds a resource graph to determine resource dependencies and creates or modifies non-dependent resources in parallel. This allows Terraform to provision resources efficiently.
+
+#### Standardize configurations
+Terraform supports reusable configuration components called modules that define configurable collections of infrastructure, saving time and encouraging best practices. You can use publicly available modules from the Terraform Registry, or write your own.
+
+#### Collaborate
+Since your configuration is written in a file, you can commit it to a Version Control System (VCS) and use Terraform Cloud to efficiently manage Terraform workflows across teams. Terraform Cloud runs Terraform in a consistent, reliable environment and provides secure access to shared state and secret data, role-based access controls, a private registry for sharing both modules and providers, and more.
+
+## How Does Terraform Work
+
+Terraform creates and manages resources on cloud platforms and other services through their application programming interfaces (APIs). Providers enable Terraform to work with virtually any platform or service with an accessible API.
+
+![working-of-terraform-image](https://developer.hashicorp.com/_next/image?url=https%3A%2F%2Fcontent.hashicorp.com%2Fapi%2Fassets%3Fproduct%3Dterraform%26version%3Dv1.4.5%26asset%3Dwebsite%252Fimg%252Fdocs%252Fintro-terraform-apis.png%26width%3D2048%26height%3D644&w=2048&q=75)
+
+The core Terraform workflow consists of three stages:
+
+- Write: You define resources, which may be across multiple cloud providers and services. For example, you might create a configuration to deploy an application on virtual machines in a Virtual Private Cloud (VPC) network with security groups and a load balancer.
+- Plan: Terraform creates an execution plan describing the infrastructure it will create, update, or destroy based on the existing infrastructure and your configuration.
+- Apply: On approval, Terraform performs the proposed operations in the correct order, respecting any resource dependencies. For example, if you update the properties of a VPC and change the number of virtual machines in that VPC, Terraform will recreate the VPC before scaling the virtual machines.
+
+![core-stages-in-terraform-image](https://developer.hashicorp.com/_next/image?url=https%3A%2F%2Fcontent.hashicorp.com%2Fapi%2Fassets%3Fproduct%3Dterraform%26version%3Dv1.4.5%26asset%3Dwebsite%252Fimg%252Fdocs%252Fintro-terraform-workflow.png%26width%3D2038%26height%3D1773&w=2048&q=75)
+
+## Objectives of this capability
+
+- To provide terraform templates so that developers can accelerate their development process
+- To provide terraform templates in a single source 
+- To provide Terraform best practices
+- To provide reusable modules 
+- To provide dependency management so that code cannot break
+
+
+## Features of this capability
+
+- Control over infrastructure using variables
+- supports almost every feature associated with services
+- Documentation for every module provided
+- Examples for almost every modules provided 
+- Follows modular architecture
+- Follows Extraction and Abstraction
+
+## Getting Started
+
+### Prerequisites
+
+- Terraform CLI should be installed in terminal 
+- Respective cloud provider should be setup in terminal
+- Cloud provider should enable permissions so that Terraform invokes respective API's 
+
+### AWS Provider
+
+Use the Amazon Web Services (AWS) provider to interact with the many resources supported by AWS. You must configure the provider with the proper credentials before you can use it.
+
+```
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.0"
     }
-
-    s3_one = {
-      domain_name = "my-s3-bycket.s3.amazonaws.com"
-      s3_origin_config = {
-        origin_access_identity = "s3_bucket_one"
-      }
-    }
   }
+}
 
-  default_cache_behavior = {
-    target_origin_id           = "something"
-    viewer_protocol_policy     = "allow-all"
-
-    allowed_methods = ["GET", "HEAD", "OPTIONS"]
-    cached_methods  = ["GET", "HEAD"]
-    compress        = true
-    query_string    = true
-  }
-
-  ordered_cache_behavior = [
-    {
-      path_pattern           = "/static/*"
-      target_origin_id       = "s3_one"
-      viewer_protocol_policy = "redirect-to-https"
-
-      allowed_methods = ["GET", "HEAD", "OPTIONS"]
-      cached_methods  = ["GET", "HEAD"]
-      compress        = true
-      query_string    = true
-    }
-  ]
-
-  viewer_certificate = {
-    acm_certificate_arn = "arn:aws:acm:us-east-1:135367859851:certificate/1032b155-22da-4ae0-9f69-e206f825458b"
-    ssl_support_method  = "sni-only"
-  }
+# Configure the AWS Provider
+provider "aws" {
+  region = "us-east-1"
 }
 ```
 
-## Examples:
+#### AWS RDS Module
 
-- Complete - Complete example which creates AWS CloudFront distribution and integrates it with other terraform-aws-modules to create additional resources: S3 buckets, Lambda Functions, CloudFront Functions, ACM Certificate, Route53 Records.
+This modules creates AWS RDS and associated resources based on input provided by the user. To use this module, follow the steps:
 
-## Requirements
+Step-1: Clone the repo
 
-| Name | Version |
-|------|---------|
-| [terraform](#requirement\_terraform) | >= 0.13.1 |
-|  [aws](#requirement\_aws) | >= 4.29 |
+```
+git clone https://github.com/Deloitte/digiprint_fabric_solutions/tree/develop
+```
 
-## Providers
+Step-2: Go to RDS root directory
 
-| Name | Version |
-|------|---------|
-|  [aws](#provider\_aws) | >= 4.29 |
+```
+cd shared_capabilities/templates/rds/root
+```
 
-## Resources
+Step-3: Provision infrastructure using terraform commands
 
-| Name | Type |
-|------|------|
-| [aws_cloudfront_distribution.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudfront_distribution) | resource |
-| [aws_cloudfront_monitoring_subscription.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudfront_monitoring_subscription) | resource |
-| [aws_cloudfront_origin_access_control.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudfront_origin_access_control) | resource |
-| [aws_cloudfront_origin_access_identity.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudfront_origin_access_identity) | resource |
+```
+terraform init    //initializes terraform modules 
+terraform validate   // validates terraform configurations
+terraform plan    // plans the infrastructure but does not provision
+terraform apply    // provisions infrastructure
+```
 
-## Inputs
+The resources and associated services will be provisioned based on the user input, since this module provides wide latitude of control over infrastructure. For more details and usage, refer the [RDS Documentation](#https://github.com/Deloitte/digiprint_fabric_solutions/tree/develop/shared_capabilities/templates/rds)
 
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
-|  [aliases](#input\_aliases) | Extra CNAMEs (alternate domain names), if any, for this distribution. | `list(string)` | `null` | no |
-|  [comment](#input\_comment) | Any comments you want to include about the distribution. | `string` | `null` | no |
-| [create\_distribution](#input\_create\_distribution) | Controls if CloudFront distribution should be created | `bool` | `true` | no |
-|  [create\_monitoring\_subscription](#input\_create\_monitoring\_subscription) | If enabled, the resource for monitoring subscription will created. | `bool` | `false` | no |
-|  [create\_origin\_access\_control](#input\_create\_origin\_access\_control) | Controls if CloudFront origin access control should be created | `bool` | `false` | no |
-| [create\_origin\_access\_identity](#input\_create\_origin\_access\_identity) | Controls if CloudFront origin access identity should be created | `bool` | `false` | no |
-|  [custom\_error\_response](#input\_custom\_error\_response) | One or more custom error response elements | `any` | `{}` | no |
-|  [default\_cache\_behavior](#input\_default\_cache\_behavior) | The default cache behavior for this distribution | `any` | `null` | no |
-|  [default\_root\_object](#input\_default\_root\_object) | The object that you want CloudFront to return (for example, index.html) when an end user requests the root URL. | `string` | `null` | no |
-|  [enabled](#input\_enabled) | Whether the distribution is enabled to accept end user requests for content. | `bool` | `true` | no |
-|  [geo\_restriction](#input\_geo\_restriction) | The restriction configuration for this distribution (geo\_restrictions) | `any` | `{}` | no |
-|  [http\_version](#input\_http\_version) | The maximum HTTP version to support on the distribution. Allowed values are http1.1, http2, http2and3, and http3. The default is http2. | `string` | `"http2"` | no |
-|  [is\_ipv6\_enabled](#input\_is\_ipv6\_enabled) | Whether the IPv6 is enabled for the distribution. | `bool` | `null` | no |
-|  [logging\_config](#input\_logging\_config) | The logging configuration that controls how logs are written to your distribution (maximum one). | `any` | `{}` | no |
-|  [ordered\_cache\_behavior](#input\_ordered\_cache\_behavior) | An ordered list of cache behaviors resource for this distribution. List from top to bottom in order of precedence. The topmost cache behavior will have precedence 0. | `any` | `[]` | no |
-|  [origin](#input\_origin) | One or more origins for this distribution (multiples allowed). | `any` | `null` | no |
-|  [origin\_access\_control](#input\_origin\_access\_control) | Map of CloudFront origin access control | <pre>map(object({<br>    description      = string<br>    origin_type      = string<br>    signing_behavior = string<br>    signing_protocol = string<br>  }))</pre> | <pre>{<br>  "s3": {<br>    "description": "",<br>    "origin_type": "s3",<br>    "signing_behavior": "always",<br>    "signing_protocol": "sigv4"<br>  }<br>}</pre> | no |
-|  [origin\_access\_identities](#input\_origin\_access\_identities) | Map of CloudFront origin access identities (value as a comment) | `map(string)` | `{}` | no |
-|  [origin\_group](#input\_origin\_group) | One or more origin\_group for this distribution (multiples allowed). | `any` | `{}` | no |
-|  [price\_class](#input\_price\_class) | The price class for this distribution. One of PriceClass\_All, PriceClass\_200, PriceClass\_100 | `string` | `null` | no |
-|  [realtime\_metrics\_subscription\_status](#input\_realtime\_metrics\_subscription\_status) | A flag that indicates whether additional CloudWatch metrics are enabled for a given CloudFront distribution. Valid values are `Enabled` and `Disabled`. | `string` | `"Enabled"` | no |
-|  [retain\_on\_delete](#input\_retain\_on\_delete) | Disables the distribution instead of deleting it when destroying the resource through Terraform. If this is set, the distribution needs to be deleted manually afterwards. | `bool` | `false` | no |
-|  [tags](#input\_tags) | A map of tags to assign to the resource. | `map(string)` | `null` | no |
-|  [viewer\_certificate](#input\_viewer\_certificate) | The SSL configuration for this distribution | `any` | <pre>{<br>  "cloudfront_default_certificate": true,<br>  "minimum_protocol_version": "TLSv1"<br>}</pre> | no |
-|  [wait\_for\_deployment](#input\_wait\_for\_deployment) | If enabled, the resource will wait for the distribution status to change from InProgress to Deployed. Setting this to false will skip the process. | `bool` | `true` | no |
-|  [web\_acl\_id](#input\_web\_acl\_id) | If you're using AWS WAF to filter CloudFront requests, the Id of the AWS WAF web ACL that is associated with the distribution. The WAF Web ACL must exist in the WAF Global (CloudFront) region and the credentials configuring this argument must have waf:GetWebACL permissions assigned. If using WAFv2, provide the ARN of the web ACL. | `string` | `null` | no |
 
-## Outputs
+#### AWS CloudFront Module
 
-| Name | Description |
-|------|-------------|
-|  [cloudfront\_distribution\_arn](#output\_cloudfront\_distribution\_arn) | The ARN (Amazon Resource Name) for the distribution. |
-| [cloudfront\_distribution\_caller\_reference](#output\_cloudfront\_distribution\_caller\_reference) | Internal value used by CloudFront to allow future updates to the distribution configuration. |
-|  [cloudfront\_distribution\_domain\_name](#output\_cloudfront\_distribution\_domain\_name) | The domain name corresponding to the distribution. |
-|  [cloudfront\_distribution\_etag](#output\_cloudfront\_distribution\_etag) | The current version of the distribution's information. |
-|  [cloudfront\_distribution\_hosted\_zone\_id](#output\_cloudfront\_distribution\_hosted\_zone\_id) | The CloudFront Route 53 zone ID that can be used to route an Alias Resource Record Set to. |
-|  [cloudfront\_distribution\_id](#output\_cloudfront\_distribution\_id) | The identifier for the distribution. |
-|  [cloudfront\_distribution\_in\_progress\_validation\_batches](#output\_cloudfront\_distribution\_in\_progress\_validation\_batches) | The number of invalidation batches currently in progress. |
-| [cloudfront\_distribution\_last\_modified\_time](#output\_cloudfront\_distribution\_last\_modified\_time) | The date and time the distribution was last modified. |
-|  [cloudfront\_distribution\_status](#output\_cloudfront\_distribution\_status) | The current status of the distribution. Deployed if the distribution's information is fully propagated throughout the Amazon CloudFront system. |
-|  [cloudfront\_distribution\_tags](#output\_cloudfront\_distribution\_tags) | Tags of the distribution's |
-|  [cloudfront\_distribution\_trusted\_signers](#output\_cloudfront\_distribution\_trusted\_signers) | List of nested attributes for active trusted signers, if the distribution is set up to serve private content with signed URLs |
-|  [cloudfront\_monitoring\_subscription\_id](#output\_cloudfront\_monitoring\_subscription\_id) | The ID of the CloudFront monitoring subscription, which corresponds to the `distribution_id`. |
-|  [cloudfront\_origin\_access\_controls](#output\_cloudfront\_origin\_access\_controls) | The origin access controls created |
-|  [cloudfront\_origin\_access\_controls\_ids](#output\_cloudfront\_origin\_access\_controls\_ids) | The IDS of the origin access identities created |
-|  [cloudfront\_origin\_access\_identities](#output\_cloudfront\_origin\_access\_identities) | The origin access identities created |
-|  [cloudfront\_origin\_access\_identity\_iam\_arns](#output\_cloudfront\_origin\_access\_identity\_iam\_arns) | The IAM arns of the origin access identities created |
-| [cloudfront\_origin\_access\_identity\_ids](#output\_cloudfront\_origin\_access\_identity\_ids) | The IDS of the origin access identities created |
+This modules creates AWS CloudFront and associated resources based on input provided by the user. To use this module, follow the steps:
+
+Step-1: Clone the repo
+
+```
+git clone https://github.com/Deloitte/digiprint_fabric_solutions/tree/develop
+```
+
+Step-2: Go to CloudFront root directory
+
+```
+cd shared_capabilities/templates/cloud_front/root
+```
+
+Step-3: Provision infrastructure using terraform commands
+
+```
+terraform init    //initializes terraform modules 
+terraform validate   // validates terraform configurations
+terraform plan    // plans the infrastructure but does not provision
+terraform apply    // provisions infrastructure
+```
+
+The resources and associated services will be provisioned based on the user input, since this module provides wide latitude of control over infrastructure. For more details and usage, refer the [CloudFront Documentation](#https://github.com/Deloitte/digiprint_fabric_solutions/tree/develop/shared_capabilities/templates/cloud_front)
+
+#### AWS API Gateway Module
+
+This modules creates AWS API Gateway and associated resources based on input provided by the user. To use this module, follow the steps:
+
+Step-1: Clone the repo
+
+```
+git clone https://github.com/Deloitte/digiprint_fabric_solutions/tree/develop
+```
+
+Step-2: Go to API Gateway root directory
+
+```
+cd shared_capabilities/templates/api-gateway/root/basic_api
+```
+
+Step-3: Provision infrastructure using terraform commands
+
+```
+terraform init    //initializes terraform modules 
+terraform validate   // validates terraform configurations
+terraform plan    // plans the infrastructure but does not provision
+terraform apply    // provisions infrastructure
+```
+
+The resources and associated services will be provisioned based on the user input, since this module provides wide latitude of control over infrastructure. For more details and usage, refer the [API Gateway Documentation](#https://github.com/Deloitte/digiprint_fabric_solutions/tree/develop/shared_capabilities/templates/api-gateway)
+
+#### AWS S3 Module
+
+This modules creates AWS S3 and associated resources based on input provided by the user. To use this module, follow the steps:
+
+Step-1: Clone the repo
+
+```
+git clone https://github.com/Deloitte/digiprint_fabric_solutions/tree/develop
+```
+
+Step-2: Go to S3 root directory
+
+```
+cd shared_capabilities/templates/s3/root
+```
+
+Step-3: Provision infrastructure using terraform commands
+
+```
+terraform init    //initializes terraform modules 
+terraform validate   // validates terraform configurations
+terraform plan    // plans the infrastructure but does not provision
+terraform apply    // provisions infrastructure
+```
+
+The resources and associated services will be provisioned based on the user input, since this module provides wide latitude of control over infrastructure. For more details and usage, refer the [S3 Documentation](#https://github.com/Deloitte/digiprint_fabric_solutions/tree/develop/shared_capabilities/templates/s3)
+
+
+## Terraform Best Practices
+
+- Use version control: Store your Terraform code in a version control system (VCS) such as Git to track changes and collaborate with your team.
+
+- Use modules: Organize your infrastructure code into reusable modules to simplify management and promote code reuse.
+
+- Use variables: Use variables to parameterize your code and make it easier to customize and reuse.
+
+- Use outputs: Use outputs to expose useful information about the resources you’ve created in your code.
+
+- Use remote state: Store your Terraform state file in a remote backend (such as S3) to ensure consistency and enable collaboration.
+
+- Use state locking: Enable state locking to prevent simultaneous updates and ensure consistency of your infrastructure.
+
+- Use a service account: Create a dedicated service account with the appropriate permissions to run your Terraform code.
+
+- Use a naming convention: Establish a consistent naming convention for your resources to improve readability and organization.
+
+- Use tags: Use tags to label your resources with useful metadata, such as owner or environment.
+
+- Use separate environments: Create separate environments (e.g. dev, staging, production) to isolate changes and prevent accidental updates to production.
+
+- Use a pre-commit hook: Use a pre-commit hook to validate your Terraform code and catch errors before you commit your changes.
+
+- Use a continuous integration (CI) pipeline: Use a CI pipeline to test and deploy your Terraform code automatically.
+
+- Use conditional logic: Use conditional logic to enable or disable resources based on conditions, such as environment or region.
+
+- Use Terraform modules from the community: Use modules from the Terraform registry or other community sources to speed up development and improve quality.
+
+- Use Terraform best practices: Follow best practices recommended by the Terraform community to ensure your code is scalable, maintainable, and secure.
+
+- Use a state backend with versioning: Use a state backend that supports versioning to enable easy rollback and recovery of your infrastructure.
+
+- Use Terraform providers for consistent resource creation: Use Terraform providers to create resources in a consistent way across multiple cloud platforms.
+
+- Use Terraform workspaces: Use Terraform workspaces to manage multiple instances of the same infrastructure code in a single configuration.
+
+- Use Terraform graph to visualize infrastructure: Use the Terraform graph command to generate a visual representation of your infrastructure.
+
+- Use Terraform testing tools: Use Terraform testing tools such as Terratest to automate infrastructure testing and ensure consistent, high-quality code.
+
+- Use Terraform linting tools: Use Terraform linting tools like tflint to catch issues in your code before running it.
+
+- Use Terraform plan to preview changes: Use Terraform plan to preview changes to your infrastructure before applying them to prevent unexpected consequences.
+
+- Use Terraform apply with care: Use Terraform apply with care and always review the changes before applying them to ensure that the changes are intended.
+
+- Use Terraform destroy to clean up resources: Use Terraform destroy to clean up resources when they are no longer needed to prevent unnecessary costs.
+
+- Use Terraform backend encryption: Use encryption to protect sensitive data in the state file.
+
+- Use Terraform timeouts: Use timeouts to prevent Terraform from hanging indefinitely.
+
+- Use Terraform providers with caution: Use Terraform providers from trusted sources and review the code before using them.
+
+- Use Terraform Workspaces securely: Ensure that your workspaces are properly secured to prevent unauthorized access.
+
+- Use Terraform with Configuration Management tools: Integrate Terraform with configuration management tools like Ansible or Chef to enable comprehensive infrastructure automation.
+
+- Use immutable infrastructure: Create immutable infrastructure using Terraform to ensure consistency and prevent configuration drift.
+
+- Use Terraform data sources: Use Terraform data sources to query existing resources and use their properties in your code.
+
+- Use Terraform State Pull Requests: Use pull requests to manage changes to the Terraform state file and ensure changes are reviewed before they are applied.
+
+- Use Terraform Cloud for collaboration: Use Terraform Cloud for collaboration with your team and to store your state file securely.
+
+- Use Infrastructure as Code testing: Test your Terraform code regularly using Infrastructure as Code testing tools like Terratest.
+
+- Use Terraform backup and restore: Implement a backup and restore plan for your state file to ensure that you can recover from data loss.
+
