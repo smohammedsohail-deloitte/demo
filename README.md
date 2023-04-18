@@ -144,7 +144,7 @@ terraform plan    // plans the infrastructure but does not provision
 terraform apply    // provisions infrastructure
 ```
 
-The resources and associated services will be provisioned based on the user input, since this module provides wide latitude of control over infrastructure. For more details and usage, refer the [RDS Documentation](#https://github.com/Deloitte/digiprint_fabric_solutions/tree/develop/shared_capabilities/templates/rds)
+The resources and associated services will be provisioned based on the user input, since this module provides wide latitude of control over infrastructure. For more details and usage, refer the [RDS Documentation](https://github.com/Deloitte/digiprint_fabric_solutions/tree/develop/shared_capabilities/templates/rds)
 
 
 #### AWS CloudFront Module
@@ -172,7 +172,7 @@ terraform plan    // plans the infrastructure but does not provision
 terraform apply    // provisions infrastructure
 ```
 
-The resources and associated services will be provisioned based on the user input, since this module provides wide latitude of control over infrastructure. For more details and usage, refer the [CloudFront Documentation](#https://github.com/Deloitte/digiprint_fabric_solutions/tree/develop/shared_capabilities/templates/cloud_front)
+The resources and associated services will be provisioned based on the user input, since this module provides wide latitude of control over infrastructure. For more details and usage, refer the [CloudFront Documentation](https://github.com/Deloitte/digiprint_fabric_solutions/tree/develop/shared_capabilities/templates/cloud_front)
 
 #### AWS API Gateway Module
 
@@ -199,7 +199,7 @@ terraform plan    // plans the infrastructure but does not provision
 terraform apply    // provisions infrastructure
 ```
 
-The resources and associated services will be provisioned based on the user input, since this module provides wide latitude of control over infrastructure. For more details and usage, refer the [API Gateway Documentation](#https://github.com/Deloitte/digiprint_fabric_solutions/tree/develop/shared_capabilities/templates/api-gateway)
+The resources and associated services will be provisioned based on the user input, since this module provides wide latitude of control over infrastructure. For more details and usage, refer the [API Gateway Documentation](https://github.com/Deloitte/digiprint_fabric_solutions/tree/develop/shared_capabilities/templates/api-gateway)
 
 #### AWS S3 Module
 
@@ -226,7 +226,7 @@ terraform plan    // plans the infrastructure but does not provision
 terraform apply    // provisions infrastructure
 ```
 
-The resources and associated services will be provisioned based on the user input, since this module provides wide latitude of control over infrastructure. For more details and usage, refer the [S3 Documentation](#https://github.com/Deloitte/digiprint_fabric_solutions/tree/develop/shared_capabilities/templates/s3)
+The resources and associated services will be provisioned based on the user input, since this module provides wide latitude of control over infrastructure. For more details and usage, refer the [S3 Documentation](https://github.com/Deloitte/digiprint_fabric_solutions/tree/develop/shared_capabilities/templates/s3)
 
 
 ## Terraform Best Practices
